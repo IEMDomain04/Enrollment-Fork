@@ -1,5 +1,4 @@
 package plm.rafaeltorres.irregularenrollmentsystem.controllers;
-import java.awt.Desktop;
 
 import com.dlsc.formsfx.model.structure.Field;
 import com.dlsc.formsfx.model.structure.Form;
@@ -36,10 +35,12 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.sql.*;
+import java.sql.Blob;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.Date;
 
 public class StudentDashboardController extends Controller {
     private String currentSY = "2023-2024";
@@ -147,6 +148,17 @@ public class StudentDashboardController extends Controller {
     private TextField txtSubjectSearch;
     @FXML
     private Button btnAddIrreg;
+    @FXML
+    private TableView tblTuitionFees;
+    @FXML
+    private Label lblTotalFee;
+    @FXML
+    private Label lblTuitionF;
+    @FXML
+    private Label lblMiscF;
+    @FXML
+    private Label lblNumberUnits;
+
 
 
 
@@ -330,12 +342,12 @@ public class StudentDashboardController extends Controller {
 
         Form newPassword = Form.of(
                         com.dlsc.formsfx.model.structure.Group.of(
-                                com.dlsc.formsfx.model.structure.Field.ofPasswordType("")
+                                Field.ofPasswordType("")
                                         .bind(oldPass)
                                         .required("Please enter your old password")
                                         .label("Old Password"),
 
-                                com.dlsc.formsfx.model.structure.Field.ofPasswordType("")
+                                Field.ofPasswordType("")
                                         .bind(newPass)
                                         .required("Please enter your new password")
                                         .label("New Password")
@@ -697,9 +709,75 @@ public class StudentDashboardController extends Controller {
     }
     @FXML
     protected void onBtnTuitionAction(ActionEvent event) throws IllegalAccessException{
+        String strTuitionFeeQuery = "SELECT* FROM tuition";
+        float flTotalFee = 0.00F, flUnitPrice = 0.00F, flSumFee = 0.00F, flSum = 0.00F, flTuition = 0.00F;
+
         currentPane.setVisible(false);
         currentPane = tuitionContainer;
         currentPane.setVisible(true);
+        tblTuitionFees.setEditable(false);
+        tblTuitionFees.setMouseTransparent(true);
+
+        try
+        {
+            ps = conn.prepareStatement(strTuitionFeeQuery);
+            rs = ps.executeQuery();
+            TableViewUtils.generateTableFromResultSet(tblTuitionFees, rs);
+
+            ps = conn.prepareStatement("SELECT amount FROM enrollment_system.tuition WHERE description = \"Tuition Fee (Price per Unit)\"");
+            rs = ps.executeQuery();
+            if(rs.next())
+            {
+                flUnitPrice = rs.getFloat(1);
+            }
+
+            ps = conn.prepareStatement("SELECT amount FROM enrollment_system.tuition WHERE description <> '* Except Tuition Fee (Price per Unit)';");
+            rs = ps.executeQuery();
+            while(rs.next())
+            {
+                flSum = rs.getFloat(1);
+                flSumFee += flSum;
+            }
+
+            ps = conn.prepareStatement("select " +
+                    "v.subject_code, " +
+                    "v.description, " +
+                    "v.block, " +
+                    "v.SCHEDULE, " +
+                    "v.CREDITS, " +
+                    "v.professor "+
+                    "from student_schedule s " +
+                    "inner join vwSubjectSchedules v on " +
+                    "s.subject_code = v.subject_code " +
+                    "and s.sy = v.sy " +
+                    "and s.semester = v.semester " +
+                    "and s.block_no = concat(v.course, v.year, v.block) where s.student_no = ? and s.sy = ? and s.semester = ? ");
+            ps.setString(1, student.getStudentNo());
+            ps.setString(2, currentSY);
+            ps.setString(3, currentSem);
+            rs = ps.executeQuery();
+
+            int totalUnits = 0;
+            while(rs.next())
+            {
+                totalUnits += rs.getInt(5);
+            }
+
+            flTuition = totalUnits*flUnitPrice;
+
+            flTotalFee = flTuition+flSumFee;
+
+            lblTuitionF.setText(String.valueOf(flTuition));
+            lblMiscF.setText(String.valueOf(flSumFee));
+            lblNumberUnits.setText("Tuition Fee x "+totalUnits+" Units");
+
+            lblTotalFee.setText("Total Fee: "+flTotalFee);
+        }
+
+        catch(Exception e)
+        {
+            System.out.println(e);
+        }
     }
     @FXML
     protected void onBtnGradesAction(ActionEvent event) throws IllegalAccessException{
@@ -799,4 +877,9 @@ public class StudentDashboardController extends Controller {
             AlertMessage.showErrorAlert("An error occurred while fetching your grades.");
         }
     }
+
+
+
+
+
 }

@@ -1,20 +1,21 @@
 package plm.rafaeltorres.irregularenrollmentsystem.controllers;
 
-import javafx.fxml.Initializable;
-import javafx.scene.control.*;
-import org.springframework.security.crypto.bcrypt.BCrypt;
-import plm.rafaeltorres.irregularenrollmentsystem.db.Database;
-
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.*;
 import javafx.scene.input.KeyEvent;
+import org.springframework.security.crypto.bcrypt.BCrypt;
+import plm.rafaeltorres.irregularenrollmentsystem.db.Database;
 import plm.rafaeltorres.irregularenrollmentsystem.model.Employee;
 import plm.rafaeltorres.irregularenrollmentsystem.model.Student;
 import plm.rafaeltorres.irregularenrollmentsystem.utils.AlertMessage;
 import plm.rafaeltorres.irregularenrollmentsystem.utils.SceneSwitcher;
 
-import java.sql.*;
 import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.ResourceBundle;
